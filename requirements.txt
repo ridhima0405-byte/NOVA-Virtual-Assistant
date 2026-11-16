@@ -1,0 +1,7 @@
+streamlit
+pyttsx3
+SpeechRecognition
+streamlit-mic-recorder
+openai
+python-dotenv
+requests
