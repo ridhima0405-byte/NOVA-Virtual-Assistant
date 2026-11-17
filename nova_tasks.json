@@ -1,0 +1,14 @@
+[
+    {
+        "task": "complete my ml assignment",
+        "completed": true
+    },
+    {
+        "task": "prepare project presentation",
+        "completed": true
+    },
+    {
+        "task": "complete my assignment",
+        "completed": false
+    }
+]
