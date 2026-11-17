@@ -470,7 +470,10 @@ def process_message(user_input):
         with st.spinner("NOVA is thinking..."):
 
             try:
-                answer = get_response(user_input)
+                answer = get_response(
+                    user_input,
+                    chat_history=st.session_state.messages
+                )
 
             except Exception as e:
 

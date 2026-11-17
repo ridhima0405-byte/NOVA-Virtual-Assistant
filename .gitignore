@@ -1,4 +1,22 @@
-venv/
+# API keys and secrets
 .env
+.streamlit/secrets.toml
+
+# Python virtual environment
+venv/
+env/
+
+# Python cache files
 __pycache__/
+*.py[cod]
 *.pyc
+
+# IDE settings
+.vscode/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -6,12 +6,80 @@ import urllib.parse
 import json
 import re
 import uuid
+import os
 
 from pathlib import Path
 from datetime import datetime, timedelta
 
 import requests
 import pyttsx3
+from dotenv import load_dotenv
+from openai import OpenAI, OpenAIError
+
+
+
+
+# ---------------- OPENAI API CONFIGURATION ----------------
+
+load_dotenv()
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-6-luna")
+
+
+def get_openai_client():
+    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        try:
+            import streamlit as st
+            api_key = str(st.secrets.get("OPENAI_API_KEY", "")).strip()
+        except Exception:
+            api_key = ""
+    if not api_key:
+        return None
+    return OpenAI(api_key=api_key, timeout=30.0, max_retries=1)
+
+
+def ask_llm(user_input, chat_history=None):
+    try:
+        client = get_openai_client()
+        if client is None:
+            return (
+                "The OpenAI API key is not configured. Add OPENAI_API_KEY "
+                "to your local .env file or Streamlit Cloud Secrets."
+            )
+
+        history = []
+        for message in (chat_history or [])[-10:]:
+            role = message.get("role")
+            content = message.get("content", "")
+            if role in ("user", "assistant") and content:
+                history.append({"role": role, "content": content})
+
+        if not history or history[-1]["content"] != user_input:
+            history.append({"role": "user", "content": user_input})
+
+        response = client.responses.create(
+            model=OPENAI_MODEL,
+            instructions=(
+                "You are NOVA, a friendly and helpful AI virtual assistant. "
+                "Answer clearly and accurately using simple language. "
+                "If unsure, say so. Never claim to have performed actions "
+                "on the user's device."
+            ),
+            input=history,
+            max_output_tokens=700
+        )
+        answer = response.output_text
+        return answer.strip() if answer else "I couldn't generate a response. Please try again."
+
+    except OpenAIError as error:
+        print("OpenAI API error:", repr(error))
+        return (
+            "NOVA couldn't connect to OpenAI. Check your API key, API billing "
+            "or usage limits, and internet connection."
+        )
+    except Exception as error:
+        print("AI response error:", repr(error))
+        return "Something went wrong while generating an AI response. Please try again."
 
 
 # ---------------- FILE STORAGE ----------------
@@ -484,7 +552,7 @@ def wikipedia_answer(question):
 
 # ---------------- MAIN ASSISTANT ----------------
 
-def get_response(user_input):
+def get_response(user_input, chat_history=None):
 
     command = user_input.lower().strip()
 
@@ -599,12 +667,9 @@ def get_response(user_input):
     elif command in ["bye", "goodbye"]:
         return "Goodbye! Have a nice day."
 
-    # Wikipedia fallback
+    # Wikipedia lookup first; use the LLM for general questions and conversation.
     else:
-
         answer = wikipedia_answer(user_input)
-
         if answer:
             return answer
-
-        return "Sorry, I couldn't find an answer. Try asking another question."
+        return ask_llm(user_input, chat_history)
