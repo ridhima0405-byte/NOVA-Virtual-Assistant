@@ -471,8 +471,7 @@ def process_message(user_input):
 
             try:
                 answer = get_response(
-                    user_input,
-                    chat_history=st.session_state.messages
+                    user_input
                 )
 
             except Exception as e:
